@@ -1,0 +1,1514 @@
+<html class="scroll-smooth" lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>
+   Snaking.io
+  </title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&amp;family=Roboto:wght@400;700&amp;display=swap" rel="stylesheet"/>
+  <style>
+   body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #0a0a0a;
+      color: white;
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    h1, h2, h3 {
+      font-family: 'Orbitron', sans-serif;
+    }
+    /* Custom scrollbar for leaderboard */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #111;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #555;
+      border-radius: 3px;
+    }
+    /* Canvas styles */
+    #gameCanvas {
+      background-color: #000;
+      border-radius: 1rem;
+      box-shadow: inset 0 0 20px #ffcc00;
+      display: block;
+      margin: 0 auto;
+      touch-action: none;
+      user-select: none;
+      transition: width 0.3s ease, height 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+    /* Minimap styles */
+    #minimap {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      width: 160px;
+      height: 84px;
+      border-radius: 0.75rem;
+      background-color: rgba(0, 0, 0, 0.75);
+      border: 2px solid #ffcc00;
+      box-shadow: 0 0 10px #ffcc00 inset;
+      z-index: 15;
+      user-select: none;
+    }
+    /* Enhanced logo styles */
+    .logo-container {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      filter: drop-shadow(0 0 4px #00ff00) drop-shadow(0 0 8px #00ff00);
+      transition: filter 0.3s ease;
+    }
+    .logo-container:hover {
+      filter: drop-shadow(0 0 6px #00ff00) drop-shadow(0 0 12px #00ff00);
+      transform: scale(1.1);
+      transition: filter 0.3s ease, transform 0.3s ease;
+    }
+    .logo-container img {
+      border-radius: 50%;
+      border: 2px solid #00ff00;
+      background: radial-gradient(circle at center, #004400, #001a00);
+      box-shadow: 0 0 10px #00ff00 inset;
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      display: block;
+    }
+    /* Make gameOverlay fill entire parent */
+    #gameOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #ffcc00;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      user-select: none;
+      z-index: 10;
+      padding: 1rem;
+      text-align: center;
+      box-sizing: border-box;
+      transition: opacity 0.3s ease;
+    }
+    /* Fullscreen play area styles */
+    .fullscreen-play-area {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      z-index: 9999 !important;
+      background-color: #000 !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      padding: 0 !important;
+      overflow: hidden;
+    }
+    .fullscreen-play-area #gameCanvas {
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+    .fullscreen-play-area #gameOverlay {
+      font-size: 2rem !important;
+      padding: 2rem !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 20 !important;
+    }
+    /* How to Play images enhancements */
+    .how-to-play-img-wrapper {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 0 15px #ffcc00, 0 0 30px #ffcc00 inset;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background: radial-gradient(circle at center, #ffcc00, #aa8800);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .how-to-play-img-wrapper:hover {
+      transform: scale(1.15) rotate(5deg);
+      box-shadow: 0 0 25px #ffdd33, 0 0 40px #ffdd33 inset;
+      z-index: 10;
+    }
+    .how-to-play-img-wrapper img {
+      width: 80px;
+      height: 80px;
+      border-radius: 1rem;
+      object-fit: contain;
+      filter: drop-shadow(0 0 6px #ffcc00);
+      transition: filter 0.3s ease;
+    }
+    .how-to-play-img-wrapper:hover img {
+      filter: drop-shadow(0 0 12px #ffdd33);
+    }
+    /* Skin selector styles */
+    .skin-selector {
+      display: flex; gap: 0.75rem; flex-wrap: wrap; overflow-x: auto; padding: 0.5rem 0.25rem; max-width: 360px; border: 2px solid #38e8cb; border-radius: 1rem; background: radial-gradient(circle at center, #1db87a, #9b1515); box-shadow: 0 0 15px #3ebd18 inset; scrollbar-width: thin; scrollbar-color: #555 #111; align-items: center; flex-direction: row; align-content: space-between; justify-content: center;
+    }
+    .skin-option {
+      flex: 0 0 auto;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 0 8px rgba(255, 204, 0, 0.7);
+      background: radial-gradient(circle at center, #222222, #000000);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .skin-option img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      filter: drop-shadow(0 0 6px #ffcc00);
+      transition: filter 0.3s ease;
+    }
+    .skin-option.selected {
+      border-color: #ffcc00;
+      transform: scale(1.2);
+      box-shadow: 0 0 20px #ffcc00;
+      background: radial-gradient(circle at center, #ffcc00, #aa8800);
+    }
+    .skin-option.selected img {
+      filter: drop-shadow(0 0 14px #ffcc00);
+    }
+    /* Scrollbar for skin selector */
+    .skin-selector::-webkit-scrollbar {
+      height: 8px;
+    }
+    .skin-selector::-webkit-scrollbar-track {
+      background: #111;
+    }
+    .skin-selector::-webkit-scrollbar-thumb {
+      background-color: #555;
+      border-radius: 4px;
+    }
+    /* Game Over buttons container */
+    #gameOverButtons {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 320px;
+    }
+    #gameOverButtons button {
+      flex: 1 1 140px;
+      background-color: #ffcc00;
+      color: #000;
+      font-weight: 700;
+      padding: 0.75rem 1rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      user-select: none;
+      border: none;
+    }
+    #gameOverButtons button:hover {
+      background-color: #e6b800;
+      transform: scale(1.05);
+    }
+    #gameOverButtons button:active {
+      transform: scale(0.95);
+    }
+  </style>
+ </head>
+ <body class="flex flex-col min-h-screen">
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-purple-900 via-purple-700 to-purple-900 shadow-lg z-20 relative">
+   <div class="container mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between">
+    <div class="flex items-center space-x-3">
+     <div aria-label="Snaking.io style snake icon, green snake head with big eyes and tongue out" class="logo-container">
+      <img alt="Snaking.io style snake icon, green snake head with big eyes and tongue out, glowing green with subtle neon effect" class="" height="48" src="https://storage.googleapis.com/a1aa/image/a05a9343-0854-436d-0dd2-3eb462b093e4.jpg" width="48"/>
+     </div>
+     <h1 class="text-3xl font-orbitron font-bold tracking-wide text-white select-none">
+      Snaking.io
+     </h1>
+    </div>
+    <nav class="mt-4 md:mt-0">
+     <ul class="flex space-x-6 text-white font-semibold text-lg select-none">
+      <li>
+       <a class="hover:text-yellow-400 transition" href="#play">
+        Play
+       </a>
+      </li>
+      <li>
+       <a class="hover:text-yellow-400 transition" href="#leaderboard">
+        Leaderboard
+       </a>
+      </li>
+      <li>
+       <a class="hover:text-yellow-400 transition" href="#how-to-play">
+        How to Play
+       </a>
+      </li>
+      <li>
+       <a class="hover:text-yellow-400 transition" href="#about">
+        About
+       </a>
+      </li>
+     </ul>
+    </nav>
+   </div>
+  </header>
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto px-6 py-10 space-y-16">
+   <!-- Play Section -->
+   <section class="max-w-5xl mx-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl p-8 flex flex-col md:flex-row items-center md:items-start gap-10 relative" id="play">
+    <div class="flex-1 flex flex-col items-center md:items-start space-y-6 z-10">
+     <h2 class="text-5xl font-orbitron font-extrabold text-yellow-400 select-none">
+      Play Snaking.io
+     </h2>
+     <p class="text-gray-300 text-lg max-w-lg text-center md:text-left leading-relaxed">
+      Join millions of players worldwide in this addictive multiplayer snake game. Eat glowing orbs to grow longer and avoid crashing into other snakes. Can you become the longest snake on the server?
+     </p>
+     <div class="flex flex-col items-center space-y-4">
+      <button aria-label="Start playing Snaking.io" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-4 px-12 rounded-full text-2xl shadow-lg transition transform active:scale-95 select-none" id="playButton" style="">
+       Play Now
+      </button>
+      <div class="flex flex-col items-center w-full max-w-md">
+       <label for="skinSelector" class="text-yellow-400 font-semibold mb-2 select-none text-center text-lg">
+        Select Skin
+       </label>
+       <div id="skinSelector" class="skin-selector" role="list" aria-label="Select your snake skin">
+        <div tabindex="0" role="listitem" class="skin-option selected" data-skin-index="0" aria-label="Green snake skin, glowing green neon style">
+         <img alt="Green snake head with big eyes and tongue out, glowing green neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/8c4cecd6-fc89-42c0-bb70-438ccb696809.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="1" aria-label="Blue snake skin, glowing blue neon style">
+         <img alt="Blue snake head with big eyes and tongue out, glowing blue neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/aeb8c6e0-27c1-465a-47d3-1756ceae1785.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="2" aria-label="Red snake skin, glowing red neon style">
+         <img alt="Red snake head with big eyes and tongue out, glowing red neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/20189660-de20-439b-474f-6d60dc873732.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="3" aria-label="Yellow snake skin, glowing yellow neon style">
+         <img alt="Yellow snake head with big eyes and tongue out, glowing yellow neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/439f1869-52c0-428c-55c4-ee3846cc8368.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="4" aria-label="Purple snake skin, glowing purple neon style">
+         <img alt="Purple snake head with big eyes and tongue out, glowing purple neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/110ba5aa-dc8d-4056-c801-cb9e791102c9.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="5" aria-label="Orange snake skin, glowing orange neon style">
+         <img alt="Orange snake head with big eyes and tongue out, glowing orange neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/69a5eb5e-2cc5-4b19-6262-05121ad55912.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="6" aria-label="Cyan snake skin, glowing cyan neon style">
+         <img alt="Cyan snake head with big eyes and tongue out, glowing cyan neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/d897376c-fc63-4288-650d-7e2af0b198c6.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="7" aria-label="Pink snake skin, glowing pink neon style">
+         <img alt="Pink snake head with big eyes and tongue out, glowing pink neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/e27bcb15-6c15-4bdf-7f1a-a6c028a1b00d.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="8" aria-label="White snake skin, glowing white neon style">
+         <img alt="White snake head with big eyes and tongue out, glowing white neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/255fb7e5-89c1-420d-3e52-dc1d418872b4.jpg" width="48"/>
+        </div>
+        <div tabindex="0" role="listitem" class="skin-option" data-skin-index="9" aria-label="Black snake skin, glowing black neon style">
+         <img alt="Black snake head with big eyes and tongue out, glowing black neon style" draggable="false" height="48" src="https://storage.googleapis.com/a1aa/image/49979e53-2ca8-4275-9598-8ec9fbeec4fe.jpg" width="48"/>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="flex-1 relative w-full max-w-4xl h-[451px] rounded-3xl overflow-hidden shadow-inner bg-black border-4 border-yellow-400 flex justify-center items-center" id="playArea">
+     <canvas aria-label="Snaking.io game canvas" height="451" id="gameCanvas" tabindex="0" width="856" style="">
+     </canvas>
+     <canvas aria-label="Snaking.io minimap canvas showing current snake location" height="84" id="minimap" width="160" title="Minimap showing snake position">
+     </canvas>
+     <div class="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-80 text-yellow-400 font-orbitron font-bold text-2xl select-none" id="gameOverlay" style="display: flex;">
+      <div id="gameOverText">Game Over! Your score: 290.</div>
+      <div id="gameOverButtons">
+        <button id="playAgainBtn" type="button" aria-label="Play again button">Play Again</button>
+        <button id="exitBtn" type="button" aria-label="Exit button">Exit</button>
+      </div>
+     </div>
+    </div>
+   </section>
+   <!-- Leaderboard Section -->
+   <section class="max-w-5xl mx-auto bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-3xl shadow-2xl p-8" id="leaderboard">
+    <h2 class="text-4xl font-orbitron font-extrabold text-yellow-400 mb-8 select-none text-center">
+     Leaderboard
+    </h2>
+    <div class="overflow-x-auto">
+     <table class="w-full text-left border-collapse border border-purple-700 rounded-lg overflow-hidden">
+      <thead class="bg-purple-800 text-yellow-400 select-none">
+       <tr>
+        <th class="py-3 px-6 border border-purple-700">
+         Rank
+        </th>
+        <th class="py-3 px-6 border border-purple-700">
+         Player
+        </th>
+        <th class="py-3 px-6 border border-purple-700">
+         Length
+        </th>
+        <th class="py-3 px-6 border border-purple-700">
+         Score
+        </th>
+       </tr>
+      </thead>
+      <tbody class="text-gray-300">
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         1
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 1 avatar, green snake head with big eyes and tongue out, glowing green neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/8c4cecd6-fc89-42c0-bb70-438ccb696809.jpg" width="32"/>
+         <span>
+          SnakeMaster
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         350
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         3500
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         2
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 2 avatar, blue snake head with big eyes and tongue out, glowing blue neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/aeb8c6e0-27c1-465a-47d3-1756ceae1785.jpg" width="32"/>
+         <span>
+          GlowySnake
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         342
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         3420
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         3
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 3 avatar, red snake head with big eyes and tongue out, glowing red neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/20189660-de20-439b-474f-6d60dc873732.jpg" width="32"/>
+         <span>
+          RedViper
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         335
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         3350
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         4
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 4 avatar, yellow snake head with big eyes and tongue out, glowing yellow neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/439f1869-52c0-428c-55c4-ee3846cc8368.jpg" width="32"/>
+         <span>
+          YellowFang
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         320
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         3200
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         5
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 5 avatar, purple snake head with big eyes and tongue out, glowing purple neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/110ba5aa-dc8d-4056-c801-cb9e791102c9.jpg" width="32"/>
+         <span>
+          PurpleHiss
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         310
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         3100
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         6
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 6 avatar, orange snake head with big eyes and tongue out, glowing orange neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/69a5eb5e-2cc5-4b19-6262-05121ad55912.jpg" width="32"/>
+         <span>
+          OrangeCoil
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         300
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         3000
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         7
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 7 avatar, cyan snake head with big eyes and tongue out, glowing cyan neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/d897376c-fc63-4288-650d-7e2af0b198c6.jpg" width="32"/>
+         <span>
+          CyanSlither
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         275
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         2750
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         8
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 8 avatar, pink snake head with big eyes and tongue out, glowing pink neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/e27bcb15-6c15-4bdf-7f1a-a6c028a1b00d.jpg" width="32"/>
+         <span>
+          PinkSlither
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         230
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         2300
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         9
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 9 avatar, white snake head with big eyes and tongue out, glowing white neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/255fb7e5-89c1-420d-3e52-dc1d418872b4.jpg" width="32"/>
+         <span>
+          WhiteFang
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         200
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         2000
+        </td>
+       </tr>
+       <tr class="hover:bg-purple-700 transition">
+        <td class="py-3 px-6 border border-purple-700 font-bold">
+         10
+        </td>
+        <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+         <img alt="Player 10 avatar, black snake head with big eyes and tongue out, glowing black neon style" class="w-8 h-8 rounded-full" draggable="false" height="32" src="https://storage.googleapis.com/a1aa/image/49979e53-2ca8-4275-9598-8ec9fbeec4fe.jpg" width="32"/>
+         <span>
+          BlackVenom
+         </span>
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         150
+        </td>
+        <td class="py-3 px-6 border border-purple-700">
+         1500
+        </td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+   </section>
+   <!-- How to Play Section -->
+   <section class="max-w-5xl mx-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl p-8" id="how-to-play">
+    <h2 class="text-4xl font-orbitron font-extrabold text-yellow-400 mb-8 select-none text-center">
+     How to Play
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-10 text-gray-300">
+     <div class="flex flex-col items-center space-y-4">
+      <div aria-label="Illustration of arrow keys on a keyboard, black keys with white arrows, glowing golden neon effect" class="how-to-play-img-wrapper">
+       <img alt="Illustration of arrow keys on a keyboard, black keys with white arrows, glowing golden neon effect" class="" draggable="false" height="96" src="https://storage.googleapis.com/a1aa/image/bd182e1b-3216-455d-85c7-35aec2c6ad66.jpg" width="96"/>
+      </div>
+      <h3 class="text-xl font-semibold text-yellow-400 select-none">
+       Move Your Snake
+      </h3>
+      <p class="text-center max-w-xs">
+       Use your mouse or arrow keys to control your snake�s direction and slither around the arena.
+      </p>
+     </div>
+     <div class="flex flex-col items-center space-y-4">
+      <div aria-label="Illustration of glowing orbs in various colors, representing food for the snake, with bright neon glow and sparkles" class="how-to-play-img-wrapper">
+       <img alt="Illustration of glowing orbs in various colors, representing food for the snake, with bright neon glow and sparkles" class="" draggable="false" height="96" src="https://storage.googleapis.com/a1aa/image/0e850fc5-8b5a-462b-c253-2df58f2070b3.jpg" width="96"/>
+      </div>
+      <h3 class="text-xl font-semibold text-yellow-400 select-none">
+       Eat Orbs to Grow
+      </h3>
+      <p class="text-center max-w-xs">
+       Collect glowing orbs scattered around to increase your length and score.
+      </p>
+     </div>
+     <div class="flex flex-col items-center space-y-4">
+      <div aria-label="Illustration of two snakes colliding, one snake crashing into another, with dynamic neon colors and impact effect" class="how-to-play-img-wrapper">
+       <img alt="Illustration of two snakes colliding, one snake crashing into another, with dynamic neon colors and impact effect" class="" draggable="false" height="96" src="https://storage.googleapis.com/a1aa/image/57d6ba22-41c3-4b39-c774-ffbb8ab2f02b.jpg" width="96"/>
+      </div>
+      <h3 class="text-xl font-semibold text-yellow-400 select-none">
+       Avoid Other Snakes
+      </h3>
+      <p class="text-center max-w-xs">
+       Don't run into other snakes or the walls, or you'll explode and lose your progress.
+      </p>
+     </div>
+    </div>
+   </section>
+   <!-- About Section -->
+   <section class="max-w-5xl mx-auto bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-3xl shadow-2xl p-8 text-gray-300" id="about">
+    <h2 class="text-4xl font-orbitron font-extrabold text-yellow-400 mb-6 select-none text-center">
+     About Snaking.io
+    </h2>
+    <p class="max-w-4xl mx-auto text-center leading-relaxed text-lg">
+     Snaking.io is a massively multiplayer online game where you control a snake and compete against players from around the world. Inspired by classic snake games, it adds a competitive twist with real-time multiplayer action, glowing orbs, and smooth controls.
+    </p>
+   </section>
+  </main>
+  <script>
+   (() => {
+    const canvas = document.getElementById('gameCanvas');
+    const overlay = document.getElementById('gameOverlay');
+    const playButton = document.getElementById('playButton');
+    const playArea = document.getElementById('playArea');
+    const skinSelector = document.getElementById('skinSelector');
+    const ctx = canvas.getContext('2d');
+    const minimap = document.getElementById('minimap');
+    const minimapCtx = minimap.getContext('2d');
+    const gameOverText = document.getElementById('gameOverText');
+    const gameOverButtons = document.getElementById('gameOverButtons');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const exitBtn = document.getElementById('exitBtn');
+
+    // Map size (larger than visible canvas container)
+    const MAP_WIDTH = 2300;
+    const MAP_HEIGHT = 1200;
+
+    // Viewport size (canvas container size)
+    let VIEW_WIDTH = 856;
+    let VIEW_HEIGHT = 451;
+
+    // Game constants
+    const ORB_COUNT = 150; // Increased orb count for higher generation rate
+    const ORB_RADIUS = 4;
+    const BASE_SNAKE_RADIUS = 10;
+    const MAX_SNAKE_RADIUS = 18; // Reduced max thickness
+    const BASE_SNAKE_SPEED = 2.5;
+    const MIN_SNAKE_SPEED = 0.5; // Lower min speed for bigger reduction
+    const TURN_SPEED = 0.1; // radians per frame
+    const ORB_COLORS = ['#ffcc00', '#ff9900', '#ffff33', '#ff6600', '#ffee88'];
+
+    // Snake skins colors matching the avatars order
+    const SNAKE_SKINS = [
+      ['#00ff00', '#007700'], // green
+      ['#0000ff', '#000077'], // blue
+      ['#ff0000', '#770000'], // red
+      ['#ffff00', '#777700'], // yellow
+      ['#ff00ff', '#770077'], // purple
+      ['#ff6600', '#773800'], // orange
+      ['#00ffff', '#007777'], // cyan
+      ['#ff69b4', '#772a4a'], // pink
+      ['#ffffff', '#777777'], // white
+      ['#000000', '#222222'], // black
+    ];
+
+    // Game state
+    let orbs = [];
+    let snake = {
+      x: MAP_WIDTH / 2,
+      y: MAP_HEIGHT / 2,
+      angle: 0,
+      speed: BASE_SNAKE_SPEED,
+      length: 20,
+      segments: [],
+      growSegments: 0,
+      alive: false,
+      score: 0,
+      radius: BASE_SNAKE_RADIUS,
+      colors: SNAKE_SKINS[0], // default skin colors
+      speedBoostActive: false,
+      speedBoostStartTime: 0,
+    };
+
+    // NPC snakes array
+    let npcSnakes = [];
+
+    // Keys pressed
+    let keys = {
+      left: false,
+      right: false,
+    };
+
+    // Viewport offset (top-left corner of visible area in map coordinates)
+    let viewOffsetX = snake.x - VIEW_WIDTH / 2;
+    let viewOffsetY = snake.y - VIEW_HEIGHT / 2;
+
+    // Clamp function
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    // Calculate snake radius based on length with reduced growth rate and speed boost effect (thickness reduces 10% per second)
+    function updateSnakeRadius(snakeObj) {
+  const maxLengthForRadius = 400;
+  const lengthRatio = Math.min(snakeObj.length / maxLengthForRadius, 1);
+  const theoreticalRadius = BASE_SNAKE_RADIUS + lengthRatio * (MAX_SNAKE_RADIUS - BASE_SNAKE_RADIUS) * 0.4;
+
+  // Initialize tracking values if undefined
+  if (snakeObj._maxRadiusAllowed === undefined) {
+    snakeObj._maxRadiusAllowed = theoreticalRadius;
+    snakeObj._lastLength = snakeObj.length;
+    snakeObj.radius = theoreticalRadius;
+  }
+
+  // Update max allowed radius based on length increase
+  if (snakeObj.length > snakeObj._lastLength) {
+    snakeObj._lastLength = snakeObj.length;
+    snakeObj._maxRadiusAllowed = theoreticalRadius;
+
+    // Only increase radius if new theoretical > current radius
+    if (theoreticalRadius > snakeObj.radius) {
+      // Grow smoothly
+      snakeObj.radius += 0.05;
+      if (snakeObj.radius > theoreticalRadius) {
+        snakeObj.radius = theoreticalRadius;
+      }
+    }
+  }
+
+  // During speed boost, reduce radius
+  if (snakeObj.speedBoostActive) {
+    const elapsed = (performance.now() - snakeObj.speedBoostStartTime) / 1000;
+    const reductionFactor = Math.max(0.5, 1 - 0.1 * elapsed); // 10% per second
+    const reducedRadius = snakeObj._maxRadiusAllowed * reductionFactor;
+
+    // Reduce but never increase during boost
+    if (reducedRadius < snakeObj.radius) {
+      snakeObj.radius = reducedRadius;
+    }
+  }
+
+  // Clamp to max allowed (if somehow exceeded)
+  snakeObj.radius = Math.min(snakeObj.radius, snakeObj._maxRadiusAllowed);
+}
+
+    // Calculate snake speed based on radius (thickness) with increased reduction per 10% thickness increase and speed boost effect (30% speed boost)
+    function updateSnakeSpeed(snakeObj) {
+      const thicknessIncrease = snakeObj.radius - BASE_SNAKE_RADIUS;
+      const thicknessPercent = thicknessIncrease / BASE_SNAKE_RADIUS;
+      const tenPercentIncrements = thicknessPercent / 0.1;
+      let totalReductionFactor = 1;
+      for (let i = 0; i < tenPercentIncrements; i++) {
+        const reduction = 0.05 + Math.random() * 0.05;
+        totalReductionFactor *= (1 - reduction);
+      }
+      let speed = BASE_SNAKE_SPEED * totalReductionFactor;
+      if (snakeObj.speedBoostActive) {
+        speed *= 1.5; // 50% speed boost
+      }
+      if (speed < MIN_SNAKE_SPEED) speed = MIN_SNAKE_SPEED;
+      snakeObj.speed = speed;
+    }
+     
+    function drawPreviewSnake() {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Center of canvas
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  const previewSegment = {
+    x: centerX,
+    y: centerY,
+    angle: 0,
+  };
+
+  // Use currently selected skin color
+  const colors = snake.colors || SNAKE_SKINS[0];
+  const radius = BASE_SNAKE_RADIUS + 2;
+
+  drawSegment(previewSegment, true, colors, radius, false);
+
+  ctx.font = 'bold 16px Orbitron, sans-serif';
+  ctx.fillStyle = '#ffcc00';
+  ctx.textAlign = 'center';
+  ctx.fillText('Preview', centerX, centerY + 40);
+}
+
+    // Initialize orbs randomly on the map
+    function initOrbs() {
+      orbs = [];
+      for (let i = 0; i < ORB_COUNT; i++) {
+        orbs.push({
+          x: Math.random() * MAP_WIDTH,
+          y: Math.random() * MAP_HEIGHT,
+          color: ORB_COLORS[Math.floor(Math.random() * ORB_COLORS.length)],
+          radius: ORB_RADIUS,
+        });
+      }
+    }
+
+    // Draw orb relative to viewport
+    function drawOrb(orb) {
+      const screenX = orb.x - viewOffsetX;
+      const screenY = orb.y - viewOffsetY;
+      if (screenX + orb.radius < 0 || screenX - orb.radius > VIEW_WIDTH || screenY + orb.radius < 0 || screenY - orb.radius > VIEW_HEIGHT) {
+        return;
+      }
+      const gradient = ctx.createRadialGradient(screenX, screenY, orb.radius * 0.3, screenX, screenY, orb.radius);
+      gradient.addColorStop(0, 'white');
+      gradient.addColorStop(1, orb.color);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(screenX, screenY, orb.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw snake segment relative to viewport with glow if speed boost active (only for player snake)
+    function drawSegment(segment, isHead = false, colors = ['#00ff00', '#007700'], radius = BASE_SNAKE_RADIUS, isPlayer = false) {
+  const screenX = segment.x - viewOffsetX;
+  const screenY = segment.y - viewOffsetY;
+  if (screenX + radius < 0 || screenX - radius > VIEW_WIDTH || screenY + radius < 0 || screenY - radius > VIEW_HEIGHT) {
+    return;
+  }
+
+  if (isPlayer && snake.speedBoostActive) {
+    const elapsedSeconds = (performance.now() - snake.speedBoostStartTime) / 1000;
+    // Reduce glow brightness and width during speed boost
+    const maxBlur = 6; // Reduced max blur
+    const blur = Math.max(2, maxBlur - elapsedSeconds * 2); // Reduced blur reduction rate
+    const alpha = Math.max(0.1, 1 - elapsedSeconds * 0.2); // Reduced alpha reduction rate
+    ctx.shadowColor = `rgba(255, 204, 0, ${alpha})`;
+    ctx.shadowBlur = blur;
+  } else {
+    ctx.shadowBlur = 0;
+  }
+
+  const gradient = ctx.createRadialGradient(screenX, screenY, radius * 0.3, screenX, screenY, radius);
+  gradient.addColorStop(0, isHead ? colors[0] : colors[0]);
+  gradient.addColorStop(1, isHead ? colors[1] : colors[1]);
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+
+  if (isHead) {
+    const eyeOffsetAngle = Math.PI / 6;
+    const eyeDistance = radius * 0.6;
+    const eyeRadius = radius * 0.3;
+    const leftEyeX = screenX + Math.cos(segment.angle - eyeOffsetAngle) * eyeDistance;
+    const leftEyeY = screenY + Math.sin(segment.angle - eyeOffsetAngle) * eyeDistance;
+    const rightEyeX = screenX + Math.cos(segment.angle + eyeOffsetAngle) * eyeDistance;
+    const rightEyeY = screenY + Math.sin(segment.angle + eyeOffsetAngle) * eyeDistance;
+
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(leftEyeX, leftEyeY, eyeRadius, 0, Math.PI * 2);
+    ctx.arc(rightEyeX, rightEyeY, eyeRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.arc(leftEyeX, leftEyeY, eyeRadius * 0.5, 0, Math.PI * 2);
+    ctx.arc(rightEyeX, rightEyeY, eyeRadius * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+    // Distance between two points
+    function dist(x1, y1, x2, y2) {
+      return Math.hypot(x2 - x1, y2 - y1);
+    }
+
+    // Initialize NPC snakes
+    function initNPCSnakes(count = 15) {
+      npcSnakes = [];
+      for (let i = 0; i < count; i++) {
+        const startX = Math.random() * MAP_WIDTH;
+        const startY = Math.random() * MAP_HEIGHT;
+        const angle = Math.random() * 2 * Math.PI;
+        const length = 15 + Math.floor(Math.random() * 15);
+        const speed = 1.5 + Math.random() * 1.0;
+        const colorIndex = i % SNAKE_SKINS.length;
+        npcSnakes.push({
+          x: startX,
+          y: startY,
+          angle: angle,
+          speed: speed,
+          length: length,
+          segments: [],
+          growSegments: 0,
+          colors: SNAKE_SKINS[colorIndex],
+          turnDirection: Math.random() < 0.5 ? -1 : 1,
+          turnTimer: 0,
+          turnInterval: 60 + Math.floor(Math.random() * 120),
+          alive: true,
+          speedBoostActive: false,
+          speedBoostStartTime: 0,
+        });
+      }
+    }
+    function respawnNPC(npc) {
+    setTimeout(() => {
+        const startX = Math.random() * MAP_WIDTH;
+        const startY = Math.random() * MAP_HEIGHT;
+        const angle = Math.random() * 2 * Math.PI;
+        const length = 15 + Math.floor(Math.random() * 15);
+        const speed = 1.5 + Math.random() * 1.0;
+        const colorIndex = Math.floor(Math.random() * SNAKE_SKINS.length);
+        
+        // Reset NPC properties
+        npc.x = startX;
+        npc.y = startY;
+        npc.angle = angle;
+        npc.length = length;
+        npc.speed = speed;
+        npc.segments = [];
+        npc.growSegments = 0;
+        npc.alive = true;
+        npc.colors = SNAKE_SKINS[colorIndex];
+    }, 3000); // Respawn after 3 seconds
+}
+
+    // Function to smoothly interpolate between two angles
+function lerpAngle(start, end, t) {
+  const tau = Math.PI * 2; // Full circle in radians
+  const delta = ((end - start + Math.PI) % tau) - Math.PI; // Shortest direction
+  return start + delta * t; // Interpolate
+}
+
+// Update NPC snakes movement and behavior with smooth turning
+function updateNPCSnakes() {
+  npcSnakes.forEach((npc) => {
+    if (!npc.alive) return;
+
+    // Randomly toggle speed boost on/off with some probability
+    if (!npc.speedBoostActive && Math.random() < 0.002) {
+      npc.speedBoostActive = true;
+      npc.speedBoostStartTime = performance.now();
+    } else if (npc.speedBoostActive && Math.random() < 0.01) {
+      npc.speedBoostActive = false;
+      npc.speedBoostStartTime = 0;
+    }
+
+    // Randomly change direction towards the nearest orb or player
+    let targetOrb = findNearestOrb(npc);
+    if (targetOrb) {
+      const targetAngle = Math.atan2(targetOrb.y - npc.y, targetOrb.x - npc.x);
+      npc.angle = lerpAngle(npc.angle, targetAngle, 0.1); // Smoothly turn towards the orb
+    } else {
+      // If no orb is found, continue with random movement
+      npc.turnTimer++;
+      if (npc.turnTimer >= npc.turnInterval) {
+        npc.turnDirection = Math.random() < 0.5 ? -1 : 1;
+        npc.turnTimer = 0;
+        npc.turnInterval = 60 + Math.floor(Math.random() * 120);
+      }
+      npc.angle += npc.turnDirection * TURN_SPEED * 0.5;
+    }
+
+    updateSnakeRadius(npc);
+    updateSnakeSpeed(npc);
+
+    npc.x += Math.cos(npc.angle) * npc.speed;
+    npc.y += Math.sin(npc.angle) * npc.speed;
+
+    // Wrap around the map
+    if (npc.x < 0) npc.x += MAP_WIDTH;
+    if (npc.x > MAP_WIDTH) npc.x -= MAP_WIDTH;
+    if (npc.y < 0) npc.y += MAP_HEIGHT;
+    if (npc.y > MAP_HEIGHT) npc.y -= MAP_HEIGHT;
+
+    npc.segments.unshift({ x: npc.x, y: npc.y, angle: npc.angle });
+
+    if (npc.growSegments > 0) {
+      npc.growSegments--;
+      npc.length++;
+    } else {
+      while (npc.segments.length > npc.length) {
+        npc.segments.pop();
+      }
+    }
+
+    // NPC eating orbs
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const orb = orbs[i];
+      if (dist(npc.x, npc.y, orb.x, orb.y) < npc.radius + orb.radius) {
+        orbs.splice(i, 1);
+        npc.growSegments += 1;
+        if (Math.random() < 0.1){
+        orbs.push({
+          x: Math.random() * MAP_WIDTH,
+          y: Math.random() * MAP_HEIGHT,
+          color: ORB_COLORS[Math.floor(Math.random() * ORB_COLORS.length)],
+          radius: ORB_RADIUS,
+        });
+      }
+     }
+    }
+  });
+}
+// Function to find the nearest orb for the NPC
+function findNearestOrb(npc) {
+  let nearestOrb = null;
+  let minDistance = Infinity;
+
+  orbs.forEach(orb => {
+    const distance = dist(npc.x, npc.y, orb.x, orb.y);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestOrb = orb;
+    }
+  });
+
+  return nearestOrb;
+}
+    // Draw NPC snakes
+    function drawNPCSnakes() {
+      npcSnakes.forEach((npc) => {
+        if (!npc.alive) return;
+        for (let i = npc.segments.length - 1; i >= 0; i--) {
+          drawSegment(npc.segments[i], i === 0, npc.colors, BASE_SNAKE_RADIUS, false);
+        }
+      });
+    }
+
+    // Update viewport offset to center on player snake, clamped to map edges
+    function updateViewOffset() {
+      viewOffsetX = clamp(snake.x - VIEW_WIDTH / 2, 0, MAP_WIDTH - VIEW_WIDTH);
+      viewOffsetY = clamp(snake.y - VIEW_HEIGHT / 2, 0, MAP_HEIGHT - VIEW_HEIGHT);
+    }
+
+    // Check if NPC snake head collides with player snake body (excluding head)
+    function checkNPCKilledByPlayer() {
+    const playerBodySegments = snake.segments.slice(1);
+    npcSnakes.forEach((npc) => {
+        if (!npc.alive) return;
+        const npcHead = npc.segments[0];
+        for (const segment of playerBodySegments) {
+            if (dist(npcHead.x, npcHead.y, segment.x, segment.y) < snake.radius * 2) {
+                npc.alive = false;
+                npc.segments.forEach(seg => {
+                    orbs.push({
+                        x: seg.x,
+                        y: seg.y,
+                        color: ORB_COLORS[Math.floor(Math.random() * ORB_COLORS.length)],
+                        radius: ORB_RADIUS,
+                    });
+                });
+                respawnNPC(npc); // Call respawn function
+                break;
+            }
+        }
+    });
+}
+
+function checkNPCCollisions() {
+    for (let i = 0; i < npcSnakes.length; i++) {
+        const npcA = npcSnakes[i];
+        if (!npcA.alive) continue;
+        const headA = npcA.segments[0];
+        for (let j = 0; j < npcSnakes.length; j++) {
+            if (i === j) continue;
+            const npcB = npcSnakes[j];
+            if (!npcB.alive) continue;
+            // Check if npcA head hits npcB body (excluding head)
+            for (let k = 1; k < npcB.segments.length; k++) {
+                const segB = npcB.segments[k];
+                if (dist(headA.x, headA.y, segB.x, segB.y) < npcA.radius * 2) {
+                    npcA.alive = false;
+                    npcA.segments.forEach(seg => {
+                        orbs.push({
+                            x: seg.x,
+                            y: seg.y,
+                            color: ORB_COLORS[Math.floor(Math.random() * ORB_COLORS.length)],
+                            radius: ORB_RADIUS,
+                        });
+                    });
+                    respawnNPC(npcA); // Call respawn function
+                    break;
+                }
+            }
+            if (!npcA.alive) break;
+        }
+    }
+}
+
+    // Draw minimap
+    function drawMinimap() {
+      const mmWidth = minimap.width;
+      const mmHeight = minimap.height;
+
+      minimapCtx.clearRect(0, 0, mmWidth, mmHeight);
+
+      minimapCtx.fillStyle = 'rgba(0,0,0,0.8)';
+      minimapCtx.fillRect(0, 0, mmWidth, mmHeight);
+
+      orbs.forEach(orb => {
+        const x = (orb.x / MAP_WIDTH) * mmWidth;
+        const y = (orb.y / MAP_HEIGHT) * mmHeight;
+        const radius = 1.5;
+        const gradient = minimapCtx.createRadialGradient(x, y, radius * 0.3, x, y, radius);
+        gradient.addColorStop(0, 'white');
+        gradient.addColorStop(1, orb.color);
+        minimapCtx.fillStyle = gradient;
+        minimapCtx.beginPath();
+        minimapCtx.arc(x, y, radius, 0, Math.PI * 2);
+        minimapCtx.fill();
+      });
+
+      npcSnakes.forEach(npc => {
+        if (!npc.alive) return;
+        const x = (npc.x / MAP_WIDTH) * mmWidth;
+        const y = (npc.y / MAP_HEIGHT) * mmHeight;
+        const radius = 3;
+        const gradient = minimapCtx.createRadialGradient(x, y, radius * 0.3, x, y, radius);
+        gradient.addColorStop(0, npc.colors[0]);
+        gradient.addColorStop(1, npc.colors[1]);
+        minimapCtx.fillStyle = gradient;
+        minimapCtx.beginPath();
+        minimapCtx.arc(x, y, radius, 0, Math.PI * 2);
+        minimapCtx.fill();
+      });
+
+      const px = (snake.x / MAP_WIDTH) * mmWidth;
+      const py = (snake.y / MAP_HEIGHT) * mmHeight;
+      const pradius = 5;
+
+      minimapCtx.shadowColor = '#ffcc00';
+      minimapCtx.shadowBlur = 8;
+
+      const gradient = minimapCtx.createRadialGradient(px, py, pradius * 0.3, px, py, pradius);
+      gradient.addColorStop(0, '#ffcc00');
+      gradient.addColorStop(1, '#aa8800');
+      minimapCtx.fillStyle = gradient;
+      minimapCtx.beginPath();
+      minimapCtx.arc(px, py, pradius, 0, Math.PI * 2);
+      minimapCtx.fill();
+
+      minimapCtx.shadowBlur = 0;
+    }
+
+    // Game loop
+    function gameLoop() {
+      if (!snake.alive) return;
+      // Reduce length gradually while boosting
+if (snake.speedBoostActive) {
+  if (!snake._lastLengthDrainTime) snake._lastLengthDrainTime = performance.now();
+
+  const now = performance.now();
+  const elapsed = (now - snake._lastLengthDrainTime) / 1000;
+
+  if (elapsed >= 0.5 && snake.length > 5) { // lose 1 length every 0.5 sec, min length 10
+    snake.length -= 3;
+    snake._lastLengthDrainTime = now;
+  }
+} else {
+  snake._lastLengthDrainTime = null;
+}
+
+
+      ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+      if (keys.left) {
+        snake.angle -= TURN_SPEED;
+      }
+      if (keys.right) {
+        snake.angle += TURN_SPEED;
+      }
+
+      updateSnakeRadius(snake);
+      updateSnakeSpeed(snake);
+      snake.score = Math.floor(snake.length * 10); // 10 is the multiplier, adjust as needed
+
+
+      snake.x += Math.cos(snake.angle) * snake.speed;
+      snake.y += Math.sin(snake.angle) * snake.speed;
+
+      snake.x = clamp(snake.x, 0, MAP_WIDTH);
+      snake.y = clamp(snake.y, 0, MAP_HEIGHT);
+
+      snake.segments.unshift({ x: snake.x, y: snake.y, angle: snake.angle });
+
+      if (snake.growSegments > 0) {
+        snake.growSegments--;
+        snake.length++;
+      } else {
+        while (snake.segments.length > snake.length) {
+          snake.segments.pop();
+        }
+      }
+
+      // Player eating orbs
+      for (let i = orbs.length - 1; i >= 0; i--) {
+        const orb = orbs[i];
+        if (dist(snake.x, snake.y, orb.x, orb.y) < snake.radius + orb.radius) {
+          orbs.splice(i, 1);
+          snake.growSegments += 1;
+         
+          orbs.push({
+            x: Math.random() * MAP_WIDTH,
+            y: Math.random() * MAP_HEIGHT,
+            color: ORB_COLORS[Math.floor(Math.random() * ORB_COLORS.length)],
+            radius: ORB_RADIUS,
+          });
+        }
+      }
+
+      // Check collision with NPC snakes
+      for (const npc of npcSnakes) {
+        if (!npc.alive) continue;
+        for (const segment of npc.segments) {
+          if (dist(snake.x, snake.y, segment.x, segment.y) < snake.radius * 2) {
+            snake.alive = false;
+            showGameOver();
+            return;
+          }
+        }
+      }
+
+      updateNPCSnakes();
+      checkNPCKilledByPlayer();
+      checkNPCCollisions();
+      updateViewOffset();
+
+      orbs.forEach(drawOrb);
+      drawNPCSnakes();
+
+      for (let i = snake.segments.length - 1; i >= 0; i--) {
+        drawSegment(snake.segments[i], i === 0, snake.colors, snake.radius, true);
+      }
+
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = 'bold 18px Orbitron, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`Score: ${snake.score}`, 10, 25);
+
+      drawMinimap();
+
+      requestAnimationFrame(gameLoop);
+    }
+function showGameOver() {
+  gameOverText.textContent = `Game Over! Your score: ${snake.score}.`;
+  gameOverButtons.style.display = 'flex';
+  overlay.style.display = 'flex';
+
+  const leaderboardBody = document.querySelector('#leaderboard tbody');
+
+  // Create new row for the player's score
+  const newRow = document.createElement('tr');
+  newRow.className = 'hover:bg-purple-700 transition';
+  newRow.innerHTML = `
+    <td class="py-3 px-6 border border-purple-700 font-bold">?</td>
+    <td class="py-3 px-6 border border-purple-700 flex items-center space-x-3">
+      <img src="${document.querySelector('.skin-option.selected img')?.src}" width="32" height="32" class="w-8 h-8 rounded-full" />
+      <span>You</span>
+    </td>
+    <td class="py-3 px-6 border border-purple-700">${snake.length}</td>
+    <td class="py-3 px-6 border border-purple-700">${snake.score}</td>
+  `;
+
+  // Append the new row
+  leaderboardBody.appendChild(newRow);
+
+  // Convert rows to array and sort by score descending
+  const rows = Array.from(leaderboardBody.querySelectorAll('tr'));
+  rows.sort((a, b) => {
+    const scoreA = parseInt(a.cells[3].textContent.trim());
+    const scoreB = parseInt(b.cells[3].textContent.trim());
+    return scoreB - scoreA;
+  });
+
+  // Clear leaderboard and re-append sorted rows
+  leaderboardBody.innerHTML = '';
+  rows.forEach((row, index) => {
+    row.cells[0].textContent = index + 1; // Update rank
+    leaderboardBody.appendChild(row);
+  });
+}
+
+
+
+    function hideOverlay() {
+      overlay.style.display = 'none';
+      gameOverButtons.style.display = 'none';
+    }
+
+    function resetGame() {
+      VIEW_WIDTH = playArea.clientWidth;
+      VIEW_HEIGHT = playArea.clientHeight;
+      canvas.width = VIEW_WIDTH;
+      canvas.height = VIEW_HEIGHT;
+      snake.x = MAP_WIDTH / 2;
+      snake.y = MAP_HEIGHT / 2;
+      snake.angle = 0;
+      snake.speed = BASE_SNAKE_SPEED;
+      snake.length = 20;
+      snake.segments = [];
+      snake.growSegments = 0;
+      snake.alive = true;
+      snake.score = 0;
+      snake.radius = BASE_SNAKE_RADIUS;
+      snake.speedBoostActive = false;
+      snake.speedBoostStartTime = 0;
+      const selectedSkinIndex = parseInt(document.querySelector('.skin-option.selected')?.getAttribute('data-skin-index')) || 0;
+      snake.colors = SNAKE_SKINS[selectedSkinIndex];
+      initOrbs();
+      initNPCSnakes(15);
+      hideOverlay();
+      updateViewOffset();
+      gameLoop();
+
+    }
+    window.addEventListener('resize', () => {
+  if (snake.alive) {
+    VIEW_WIDTH = playArea.clientWidth;
+    VIEW_HEIGHT = playArea.clientHeight;
+    canvas.width = VIEW_WIDTH;
+    canvas.height = VIEW_HEIGHT;
+    updateViewOffset(); // re-center on snake
+  }
+});
+
+
+    // Return to homepage: remove fullscreen and hide overlay
+    function returnToHomepage() {
+      if (playArea.classList.contains('fullscreen-play-area')) {
+        playArea.classList.remove('fullscreen-play-area');
+        document.body.style.overflow = '';
+      }
+      hideOverlay();
+      // Scroll to top or to #play section
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        keys.left = true;
+      }
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        keys.right = true;
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        keys.left = false;
+      }
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        keys.right = false;
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!snake.alive) return;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const worldX = mouseX + viewOffsetX;
+      const worldY = mouseY + viewOffsetY;
+      const dx = worldX - snake.x;
+      const dy = worldY - snake.y;
+      const targetAngle = Math.atan2(dy, dx);
+      let diff = targetAngle - snake.angle;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+      if (diff > TURN_SPEED) diff = TURN_SPEED;
+      if (diff < -TURN_SPEED) diff = -TURN_SPEED;
+      snake.angle += diff;
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (!snake.alive) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const touchX = touch.clientX - rect.left;
+      const touchY = touch.clientY - rect.top;
+      const worldX = touchX + viewOffsetX;
+      const worldY = touchY + viewOffsetY;
+      const dx = worldX - snake.x;
+      const dy = worldY - snake.y;
+      const targetAngle = Math.atan2(dy, dx);
+      let diff = targetAngle - snake.angle;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+      if (diff > TURN_SPEED) diff = TURN_SPEED;
+      if (diff < -TURN_SPEED) diff = -TURN_SPEED;
+      snake.angle += diff;
+    }, { passive: false });
+
+    playButton.addEventListener('click', () => {
+      if (!playArea.classList.contains('fullscreen-play-area')) {
+        playArea.classList.add('fullscreen-play-area');
+        document.body.style.overflow = 'hidden';
+      }
+      resetGame();
+      canvas.focus();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && playArea.classList.contains('fullscreen-play-area')) {
+        playArea.classList.remove('fullscreen-play-area');
+        document.body.style.overflow = '';
+      }
+    });
+    
+    window.addEventListener('load', () => {
+      drawPreviewSnake();
+      resetGame();
+      canvas.focus();
+    });
+
+    skinSelector.addEventListener('click', (e) => {
+  const option = e.target.closest('.skin-option');
+  if (!option) return;
+
+  document.querySelectorAll('.skin-option').forEach(el => el.classList.remove('selected'));
+  option.classList.add('selected');
+
+  const selectedSkinIndex = parseInt(option.getAttribute('data-skin-index'));
+  snake.colors = SNAKE_SKINS[selectedSkinIndex];
+
+  drawPreviewSnake(); // 🔁 Live update preview
+});
+
+
+    skinSelector.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    const option = e.target.closest('.skin-option');
+    if (!option) return;
+
+    document.querySelectorAll('.skin-option').forEach(el => el.classList.remove('selected'));
+    option.classList.add('selected');
+
+    const selectedSkinIndex = parseInt(option.getAttribute('data-skin-index'));
+    snake.colors = SNAKE_SKINS[selectedSkinIndex];
+
+    drawPreviewSnake(); // 🔁 Live update preview
+  }
+});
+
+
+    // Speed boost activation on click and hold on canvas
+    canvas.addEventListener('mousedown', (e) => {
+      if (!snake.alive) return;
+      snake.speedBoostActive = true;
+      snake.speedBoostStartTime = performance.now();
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (!snake.alive) return;
+      snake.speedBoostActive = false;
+      snake.speedBoostStartTime = 0;
+    });
+
+    canvas.addEventListener('mouseleave', (e) => {
+      if (!snake.alive) return;
+      snake.speedBoostActive = false;
+      snake.speedBoostStartTime = 0;
+    });
+
+    let lastTap = 0;
+    let touchTimeout = null;
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (!snake.alive) return;
+      const currentTime = Date.now();
+      const tapLength = currentTime - lastTap;
+      if (tapLength < 300 && tapLength > 0) {
+        snake.speedBoostActive = true;
+        snake.speedBoostStartTime = performance.now();
+        if (touchTimeout) clearTimeout(touchTimeout);
+      }
+      lastTap = currentTime;
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+      if (!snake.alive) return;
+      if (snake.speedBoostActive) {
+        if (touchTimeout) clearTimeout(touchTimeout);
+        touchTimeout = setTimeout(() => {
+          snake.speedBoostActive = false;
+          snake.speedBoostStartTime = 0;
+        }, 150);
+      }
+    });
+
+    playAgainBtn.addEventListener('click', () => {
+      resetGame();
+      canvas.focus();
+    });
+
+   exitBtn.addEventListener('click', () => {
+  if (playArea.classList.contains('fullscreen-play-area')) {
+    playArea.classList.remove('fullscreen-play-area');
+    document.body.style.overflow = '';
+  }
+
+  // Resize canvas for mini window
+  VIEW_WIDTH = playArea.clientWidth;
+  VIEW_HEIGHT = playArea.clientHeight;
+  canvas.width = VIEW_WIDTH;
+  canvas.height = VIEW_HEIGHT;
+
+  // Fully reset the game to restart it
+  resetGame();
+
+  // Focus canvas for keyboard input
+  canvas.focus();
+
+  
+});
+
+
+    initOrbs();
+    overlay.style.display = 'flex';
+  })();
+  </script>
+ </body>
+</html>
